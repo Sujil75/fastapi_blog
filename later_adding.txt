@@ -1,0 +1,11 @@
+In place of # in href of navbar 
+
+Add later after creating the specified routes
+{{ url_for("account_page") }}
+{{ url_for("login_page") }}
+{{ url_for("register_page") }}
+
+home.html
+In place of # of href in the div with class "article-metadata mb-2" with anchor tag: {{ url_for("user_posts", user_id=post.author.id) }}
+In place of # of href in the div with class "text-body-secondary" with small tag:{{ post.date_posted.strftime("%B %d, %Y") }}
+In place of # of href in the div with class "article-title" with anchor tag:{{ url_for("post_page", post_id=post.id) }}
