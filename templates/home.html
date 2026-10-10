@@ -20,7 +20,7 @@ Also, here need to call the parent part(to call parent it needs to extended like
                         </div>
                         <h2>
                             <a class="article-title"
-                               href="#">{{ post.title }}</a>
+                               href={{ url_for("post_page", post_id=post.id) }}>{{ post.title }}</a>
                         </h2>
                         <p class="article-content">{{ post.content }}</p>
                     </div>

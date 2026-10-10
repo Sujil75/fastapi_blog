@@ -48,7 +48,7 @@ def home(request: Request):
     )
 
 @app.get("/posts/{post_id}", include_in_schema=False)
-def get_post(request: Request, post_id: int): # post_id should be given with data type, so if any invalid data type is given then FastAPI automatically raises an error
+def post_page(request: Request, post_id: int): # post_id should be given with data type, so if any invalid data type is given then FastAPI automatically raises an error
     for post in posts:
         if post_id == post.get("id"):
             # return post # this will given json
@@ -65,3 +65,11 @@ def get_post(request: Request, post_id: int): # post_id should be given with dat
 @app.get("/api/posts")
 def get_posts():
     return posts
+
+@app.get("/api/posts/{post_id}")
+def get_post(post_id: int):
+    for post in posts:
+        if post.get("id") == post_id:
+            return post
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
