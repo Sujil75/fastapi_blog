@@ -1,5 +1,7 @@
 # This file uses SQLAlchemy ORM
-from __future__ import annotations # used in older python before 3.14ver not for newer, this helps to call a later defined term which is used before when it will be defined
+from __future__ import (
+    annotations,  # used in older python before 3.14ver not for newer, this helps to call a later defined term which is used before when it will be defined
+)
 
 from datetime import UTC, datetime
 
@@ -15,13 +17,15 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    image_file: Mapped[str | None] = mapped_column( # only file name is taken
+    image_file: Mapped[str | None] = mapped_column(  # only file name is taken
         String(200),
         nullable=True,
         default=None,
     )
 
-    posts: Mapped[list[Post]] = relationship(back_populates="author") # Post is used before defined, this is forward referencing
+    posts: Mapped[list[Post]] = relationship(
+        back_populates="author"
+    )  # Post is used before defined, this is forward referencing
 
     @property
     def image_path(self) -> str:
@@ -39,7 +43,7 @@ class Post(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
         nullable=False,
-        index=True,
+        index=True,  # PK gets index automatically but FK dont, so to be added explicitly
     )
     date_posted: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
