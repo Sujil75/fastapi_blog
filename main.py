@@ -67,8 +67,9 @@ def home(request: Request, db: Annotated[Session, Depends(get_db)]):
         {
             "posts": posts,
             "title": "Home",
-        }
+        },
     )
+
 
 # Post page
 @app.get("/posts/{post_id}", include_in_schema=False)
@@ -95,10 +96,39 @@ def post_page(
             {
                 "post": post,
                 "title": title,
-            }
+            },
         )
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+# Get user posts HTML
+@app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")
+def user_posts_page(
+    request: Request,
+    user_id: int,
+    db: Annotated[Session, Depends(get_db)]
+):
+    result = db.execute(select(models.User).where(models.User.id == user_id))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    result = db.execute(select(models.Post).where(models.Post.user_id == user_id))
+    posts = result.scalars().all()
+
+    return templates.TemplateResponse(
+        request,
+        "user_posts.html",
+        {
+            "posts": posts,
+            "user": user,
+            "title": f"{user.username}'s Posts"
+        }
+    )
 
 
 # Create user
@@ -112,7 +142,9 @@ def create_user(
 ):  # passes get_db as a result to db
     # To check already existing user
     result = db.execute(
-        select(models.User).where(models.User.username == user.username) # this is a db query
+        select(models.User).where(
+            models.User.username == user.username
+        )  # this is a db query
     )
     existing_user = (
         result.scalars().first()
@@ -147,6 +179,7 @@ def create_user(
 
     return new_user
 
+
 # Get user
 @app.get("/api/users/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
@@ -162,12 +195,11 @@ def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
         detail="User not found",
     )
 
+
 # Get user posts
 @app.get("/api/users/{user_id}/posts", response_model=list[PostResponse])
 def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
-    result = db.execute(
-        select(models.User).where(models.User.id == user_id)
-    )
+    result = db.execute(select(models.User).where(models.User.id == user_id))
 
     user = result.scalars().first()
 
@@ -178,9 +210,7 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
         )
 
     result = db.execute(select(models.Post).where(models.Post.user_id == user_id))
-
     posts = result.scalars().all()
-
     return posts
 
 
