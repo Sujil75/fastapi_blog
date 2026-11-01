@@ -101,7 +101,7 @@ def post_page(
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
-# Get user posts HTML
+# Template Get user posts
 @app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")
 def user_posts_page(
     request: Request,
@@ -196,7 +196,7 @@ def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
     )
 
 
-# Get user posts
+# Get user posts api
 @app.get("/api/users/{user_id}/posts", response_model=list[PostResponse])
 def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.User).where(models.User.id == user_id))
@@ -215,9 +215,14 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
 
 
 @app.get(
-    "/api/posts", response_model=list[PostResponse]
+    "/api/posts", 
+    response_model=list[PostResponse]
 )  # fastapi matches that all the posts match the PostResponse schema and doc will show the exact structure
-def get_posts():
+def get_posts(db: Annotated[Session, Depends(get_db)]):
+    # return posts
+    result = db.execute(select(models.Post))
+    posts = result.scalars().all()
+
     return posts
 
 
@@ -227,25 +232,51 @@ def get_posts():
     response_model=PostResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_post(post: PostCreate):
-    new_id = max(p["id"] for p in posts) + 1 if posts else 1
-    new_post = {
-        "id": new_id,
-        "author": post.author,
-        "title": post.title,
-        "content": post.content,
-        "date_posted": "April 23, 2025",
-    }
+def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
+    # new_id = max(p["id"] for p in posts) + 1 if posts else 1
+    result = db.execute(select(models.User).where(models.User.id == post.user_id))
+    user = result.scalars().first()
 
-    posts.append(new_post)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+        
+    # new_post = {
+    #     "id": new_id,
+    #     "author": post.author,
+    #     "title": post.title,
+    #     "content": post.content,
+    #     "date_posted": "April 23, 2025",
+    # }
+
+    # posts.append(new_post)
+
+    new_post = models.Post(
+        title=post.title,
+        content=post.content,
+        user_id=post.user_id,
+    )
+
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+
     return new_post
 
-
+# Post page, to get a post from API, for API
 @app.get("/api/posts/{post_id}", response_model=PostResponse)  # for a single post
-def get_post(post_id: int):
-    for post in posts:
-        if post.get("id") == post_id:
-            return post
+def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
+    # for post in posts:
+    #     if post.get("id") == post_id:
+    #         return post
+
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+
+    if post:
+        return post
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 

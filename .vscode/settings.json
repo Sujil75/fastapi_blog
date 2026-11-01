@@ -2,6 +2,7 @@
     "python.REPL.enableREPLSmartSend": false,
     "cSpell.words": [
         "autoflush",
-        "sessionmaker"
+        "sessionmaker",
+        "strftime"
     ]
 }
