@@ -27,7 +27,7 @@ import models
 
 # Base and engine are for tables; get_db is dependency function to provide db session
 from database import Base, engine, get_db
-from schemas import PostCreate, PostResponse, UserCreate, UserResponse
+from schemas import PostCreate, PostResponse, PostUpdate, UserCreate, UserResponse
 
 # Right after the imports of models and database
 Base.metadata.create_all(
@@ -101,20 +101,18 @@ def post_page(
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
+
 # Template Get user posts
 @app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")
 def user_posts_page(
-    request: Request,
-    user_id: int,
-    db: Annotated[Session, Depends(get_db)]
+    request: Request, user_id: int, db: Annotated[Session, Depends(get_db)]
 ):
     result = db.execute(select(models.User).where(models.User.id == user_id))
     user = result.scalars().first()
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     result = db.execute(select(models.Post).where(models.Post.user_id == user_id))
@@ -123,11 +121,7 @@ def user_posts_page(
     return templates.TemplateResponse(
         request,
         "user_posts.html",
-        {
-            "posts": posts,
-            "user": user,
-            "title": f"{user.username}'s Posts"
-        }
+        {"posts": posts, "user": user, "title": f"{user.username}'s Posts"},
     )
 
 
@@ -215,8 +209,7 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
 
 
 @app.get(
-    "/api/posts", 
-    response_model=list[PostResponse]
+    "/api/posts", response_model=list[PostResponse]
 )  # fastapi matches that all the posts match the PostResponse schema and doc will show the exact structure
 def get_posts(db: Annotated[Session, Depends(get_db)]):
     # return posts
@@ -242,7 +235,7 @@ def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-        
+
     # new_post = {
     #     "id": new_id,
     #     "author": post.author,
@@ -265,6 +258,7 @@ def create_post(post: PostCreate, db: Annotated[Session, Depends(get_db)]):
 
     return new_post
 
+
 # Post page, to get a post from API, for API
 @app.get("/api/posts/{post_id}", response_model=PostResponse)  # for a single post
 def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
@@ -279,6 +273,91 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
         return post
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
+
+@app.put(
+        "/api/posts/{post_id}",
+        response_model=PostResponse
+)
+def update_post_full(
+    post_id: int, 
+    post_data: PostCreate, # Post data is used to get the request from user, while PostCreate is used here bcoz it already req(s) title, content and id
+    db: Annotated[Session, Depends(get_db)]
+):
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+    
+    # check if user exists, used to check if client send another user for a particular post
+    if post_data.user_id != post.user_id:
+        result = db.execute(select(models.User).where(models.User.id == post_data.user_id))
+        user = result.scalars().first()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+    # Update the post
+    post.title = post_data.title
+    post.content = post_data.content
+    post.user_id = post_data.user_id
+
+    db.commit()
+    db.refresh(post)
+
+    return post
+
+# Patch post / Partially update post
+@app.patch("/api/posts/{post_id}", response_model=PostResponse)
+def update_post_partial(
+    post_id: int,
+    post_data: PostUpdate,
+    db: Annotated[Session, Depends(get_db)]
+):
+    # PostUpdate doesn't need user id
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+
+    # exclude_unset makes PATCH to work correctly, without this if the client sends a req with a single updated field pydantic will call the default data which will delete the content
+    update_data = post_data.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
+        # setattr sets the data dynamically
+        # in post setattr of field with the given value
+        setattr(post, field, value)
+
+    db.commit()
+    db.refresh(post)
+
+    return post
+
+# Delete Post
+@app.delete("/api/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+
+    db.delete(post)
+    db.commit()
 
 
 @app.exception_handler(StarletteHTTPException)

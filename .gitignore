@@ -6,3 +6,6 @@ __pycache__/
 /later_adding.txt
 
 blog.db
+error_finished.html
+post_finished.html
+users_posts_finished.html

@@ -10,6 +10,8 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     pass
 
+# PATCH is for partial updates, only to updates required fields
+
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -28,6 +30,11 @@ class PostBase(BaseModel):
 # To create posts
 class PostCreate(PostBase):
     user_id: int # TEMP
+
+# To update posts
+class PostUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    content: str | None = Field(default=None, min_length=1)
 
 
 # for post response
