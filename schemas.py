@@ -10,8 +10,6 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     pass
 
-# PATCH is for partial updates, only to updates required fields
-
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -19,6 +17,13 @@ class UserResponse(UserBase):
     # email will be added later but it will be divided as public and pvt since will be a safety concern in real-world scenario
     image_file: str | None
     image_path: str
+
+# PATCH is for partial updates, only to updates required fields
+# Updating User
+class UserUpdate(BaseModel):
+    username: str | None = Field(default=None, min_length=1, max_length=50)
+    email: EmailStr | None = Field(default=None, max_length=120)
+    image_file: str | None = Field(default=None, min_length=1, max_length=200)
 
 # type validation for creating and returning posts
 class PostBase(BaseModel):
