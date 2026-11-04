@@ -6,9 +6,11 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class UserBase(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     email: str = Field(max_length=120)
-    
+
+
 class UserCreate(UserBase):
     pass
+
 
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
@@ -18,12 +20,14 @@ class UserResponse(UserBase):
     image_file: str | None
     image_path: str
 
+
 # PATCH is for partial updates, only to updates required fields
 # Updating User
 class UserUpdate(BaseModel):
     username: str | None = Field(default=None, min_length=1, max_length=50)
     email: EmailStr | None = Field(default=None, max_length=120)
     image_file: str | None = Field(default=None, min_length=1, max_length=200)
+
 
 # type validation for creating and returning posts
 class PostBase(BaseModel):
@@ -34,7 +38,8 @@ class PostBase(BaseModel):
 
 # To create posts
 class PostCreate(PostBase):
-    user_id: int # TEMP
+    user_id: int  # TEMP
+
 
 # To update posts
 class PostUpdate(BaseModel):
@@ -51,5 +56,5 @@ class PostResponse(PostBase):
     # for databases and API id can be used so no need to use uid
     id: int
     user_id: int
-    date_posted: datetime # will be automatically converted to ISO 8060 format, so no need to serialize or custom conversion
+    date_posted: datetime  # will be automatically converted to ISO 8060 format, so no need to serialize or custom conversion
     author: UserResponse
