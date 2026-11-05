@@ -24,7 +24,8 @@ class User(Base):
     )
 
     posts: Mapped[list[Post]] = relationship(
-        back_populates="author"
+        back_populates="author",
+        cascade="all, delete-orphan", # this is a powerful method which will remove all the posts when a user account is deleted, be cautious of using it
     )  # Post is used before defined, this is forward referencing
 
     @property
