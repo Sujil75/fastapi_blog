@@ -1,0 +1,7 @@
+- AsyncIO
+    - When a normal function is executed, fastapi runs it in a separate thread pool, which doesn't block its functioning.
+    - Using Async in a function allows it to run in the main event loop, this is efficient but must await in any IO Operation.
+    - In the current project we are using DB to get the data, so need to install SQLite into the program.
+        - To install, use "pip install aiosqlite" or for uv "uv add aiosqlite".
+    - "aiosqlite" provides async driver for SQLite. So, SQLAlchemy can use it for async operations(this applies for other db's also, like for Postgres we use "psychopg")
+    

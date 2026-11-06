@@ -214,6 +214,7 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
     posts = result.scalars().all()
     return posts
 
+
 # Update user
 # Patch is more better than using a PUT method
 @app.patch("/api/users/{user_id}", response_model=UserResponse)
@@ -248,8 +249,7 @@ def update_user(
     # To verify that user is not changing the email with already taken email in the db
     if user_update.email is not None and user_update.email != user.email:
         result = db.execute(
-            select(models.User)
-                .where(models.User.email == user_update.email),
+            select(models.User).where(models.User.email == user_update.email),
         )
 
         existing_email = result.scalars().first()
@@ -271,11 +271,12 @@ def update_user(
     db.refresh(user)
     return user
 
+
 # To prevent deletion of user account since it will also remove the posts of the account we use cascade delete which is a method that confirms that the user is positive to delete their account
 # Cascading in done in user model relationship to delete all the posts along with users data
 @app.delete(
-        "/api/users/{user_id}",
-        status_code=status.HTTP_204_NO_CONTENT,
+    "/api/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.User).where(models.User.id == user_id))
@@ -358,14 +359,11 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
 
-@app.put(
-        "/api/posts/{post_id}",
-        response_model=PostResponse
-)
+@app.put("/api/posts/{post_id}", response_model=PostResponse)
 def update_post_full(
-    post_id: int, 
-    post_data: PostCreate, # Post data is used to get the request from user, while PostCreate is used here bcoz it already req(s) title, content and id
-    db: Annotated[Session, Depends(get_db)]
+    post_id: int,
+    post_data: PostCreate,  # Post data is used to get the request from user, while PostCreate is used here bcoz it already req(s) title, content and id
+    db: Annotated[Session, Depends(get_db)],
 ):
     result = db.execute(select(models.Post).where(models.Post.id == post_id))
     post = result.scalars().first()
@@ -375,10 +373,12 @@ def update_post_full(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
         )
-    
+
     # check if user exists, used to check if client send another user for a particular post
     if post_data.user_id != post.user_id:
-        result = db.execute(select(models.User).where(models.User.id == post_data.user_id))
+        result = db.execute(
+            select(models.User).where(models.User.id == post_data.user_id)
+        )
         user = result.scalars().first()
 
         if not user:
@@ -397,12 +397,11 @@ def update_post_full(
 
     return post
 
+
 # Patch post / Partially update post
 @app.patch("/api/posts/{post_id}", response_model=PostResponse)
 def update_post_partial(
-    post_id: int,
-    post_data: PostUpdate,
-    db: Annotated[Session, Depends(get_db)]
+    post_id: int, post_data: PostUpdate, db: Annotated[Session, Depends(get_db)]
 ):
     # PostUpdate doesn't need user id
     result = db.execute(select(models.Post).where(models.Post.id == post_id))
@@ -427,6 +426,7 @@ def update_post_partial(
 
     return post
 
+
 # Delete Post
 @app.delete("/api/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
@@ -435,8 +435,7 @@ def delete_post(post_id: int, db: Annotated[Session, Depends(get_db)]):
 
     if not post:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Post not found"
         )
 
     db.delete(post)
